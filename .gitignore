@@ -1,0 +1,14 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docs (keep local only)
+Product Requirements Document (PRD).md
+Project Implementation Plan (PIP).md
