@@ -27,12 +27,10 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://teslamechanicaldesigns.com/calculators/sheet-metal-bend-allowance/">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts (monospace only) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -70,9 +68,10 @@
     <header class="site-header">
         <div class="container header-inner">
             <a href="https://teslamechanicaldesigns.com" class="logo" aria-label="Tesla Mechanical Designs Home">
-                <span class="logo-icon">⚙</span>
+                <img src="tmd-logo.svg" alt="TMD Logo" class="logo-icon-img">
                 <div class="logo-text">
-                    <span class="logo-name">Tesla Mechanical</span>
+                    <span class="logo-name"><span class="tmd-highlight">T</span>ESLA <span
+                            class="tmd-highlight">M</span>ECHANICAL <span class="tmd-highlight">D</span>ESIGNS</span>
                     <span class="logo-tagline">Precision Engineering Tools</span>
                 </div>
             </a>
@@ -116,6 +115,15 @@
                     <h2 class="panel-title">
                         <span class="panel-icon">📐</span> Input Parameters
                     </h2>
+                    <!-- Precision Selector (ASME Y14.5) -->
+                    <div class="precision-toggle">
+                        <label for="precision" class="precision-label">Decimals</label>
+                        <select id="precision" class="precision-select">
+                            <option value="2">2 dp</option>
+                            <option value="3">3 dp</option>
+                            <option value="4" selected>4 dp</option>
+                        </select>
+                    </div>
                     <!-- Unit Toggle -->
                     <div class="unit-toggle" role="radiogroup" aria-label="Unit system">
                         <button type="button" class="unit-btn active" data-unit="mm" aria-pressed="true">mm</button>
@@ -154,7 +162,7 @@
 
                     <!-- Inside Bend Radius -->
                     <div class="form-group">
-                        <label for="radius">Inside Bend Radius (R) <span class="unit-label">mm</span></label>
+                        <label for="radius">Bend Radius (R) <span class="unit-label">mm</span></label>
                         <input type="number" id="radius" name="radius" placeholder="e.g. 3.0" step="0.01" min="0"
                             value="3" required>
                         <span class="error-msg" id="radius-error"></span>
@@ -210,6 +218,60 @@
                         <span class="result-value" id="ossb-value">—</span>
                         <span class="result-unit" id="ossb-unit">mm</span>
                     </div>
+                    <div class="result-card tolerance-card" id="tol-result">
+                        <span class="result-label">
+                            ISO 2768-m Tolerance
+                            <span class="tolerance-info" id="tolInfo"
+                                title="General tolerances per ISO 2768-m (medium class) based on the Bend Allowance dimension.">ⓘ</span>
+                        </span>
+                        <span class="result-value" id="tol-value">—</span>
+                        <span class="result-unit" id="tol-unit">mm</span>
+                    </div>
+
+                    <!-- ISO 2768-m Reference Table -->
+                    <div class="iso-ref-table">
+                        <h4 class="iso-ref-title">ISO 2768-m Reference <span class="tolerance-info"
+                                title="General tolerances per ISO 2768-m (medium class). The active row highlights based on your Bend Allowance.">ⓘ</span>
+                        </h4>
+                        <table class="iso-table" id="isoTable">
+                            <thead>
+                                <tr>
+                                    <th>Dimension (mm)</th>
+                                    <th>Tolerance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-range="0.5-3">
+                                    <td>0.5 – 3</td>
+                                    <td>± 0.1</td>
+                                </tr>
+                                <tr data-range="3-6">
+                                    <td>3 – 6</td>
+                                    <td>± 0.1</td>
+                                </tr>
+                                <tr data-range="6-30">
+                                    <td>6 – 30</td>
+                                    <td>± 0.2</td>
+                                </tr>
+                                <tr data-range="30-120">
+                                    <td>30 – 120</td>
+                                    <td>± 0.3</td>
+                                </tr>
+                                <tr data-range="120-400">
+                                    <td>120 – 400</td>
+                                    <td>± 0.5</td>
+                                </tr>
+                                <tr data-range="400-1000">
+                                    <td>400 – 1000</td>
+                                    <td>± 0.8</td>
+                                </tr>
+                                <tr data-range="1000-2000">
+                                    <td>1000 – 2000</td>
+                                    <td>± 1.2</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Formula Display -->
@@ -229,7 +291,7 @@
                 <div class="diagram-box">
                     <h3>Visual Bend Diagram</h3>
                     <div class="svg-container" id="svgContainer">
-                        <svg id="bendDiagram" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"
+                        <svg id="bendDiagram" viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"
                             aria-label="Dynamic bend cross-section diagram">
                             <!-- Populated by JS -->
                         </svg>
@@ -336,6 +398,8 @@
             </p>
             <p class="footer-note">Calculations are for reference only. Always verify with your CAD system and material
                 data sheets.</p>
+            <p class="footer-compliance">Calculations follow standard engineering principles compliant with ASME Y14.5
+                and ISO 2768-m.</p>
         </div>
     </footer>
 

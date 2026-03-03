@@ -63,9 +63,21 @@
 
         unitBtns: $$('.unit-btn'),
         unitLabels: $$('.unit-label'),
+
+        precisionSelect: $('#precision'),
+
+        tolValue: $('#tol-value'),
+        tolUnit: $('#tol-unit'),
     };
 
     let currentUnit = 'mm';
+    let currentPrecision = 4;
+
+    // ──────── PRECISION SELECTOR (ASME Y14.5) ────────
+    dom.precisionSelect.addEventListener('change', () => {
+        currentPrecision = parseInt(dom.precisionSelect.value, 10);
+        calculate();
+    });
 
     // ──────── UNIT TOGGLE ────────
     dom.unitBtns.forEach(btn => {
@@ -195,6 +207,19 @@
         if (errEl) errEl.textContent = '';
     }
 
+    // ──────── ISO 2768-m TOLERANCE ────────
+    function getISO2768Tolerance(lengthMM) {
+        // ISO 2768-m (medium) general tolerance ranges
+        if (lengthMM >= 0.5 && lengthMM < 3) return { tol: 0.1, label: '±0.1' };
+        if (lengthMM >= 3 && lengthMM < 6) return { tol: 0.1, label: '±0.1' };
+        if (lengthMM >= 6 && lengthMM < 30) return { tol: 0.2, label: '±0.2' };
+        if (lengthMM >= 30 && lengthMM < 120) return { tol: 0.3, label: '±0.3' };
+        if (lengthMM >= 120 && lengthMM < 400) return { tol: 0.5, label: '±0.5' };
+        if (lengthMM >= 400 && lengthMM < 1000) return { tol: 0.8, label: '±0.8' };
+        if (lengthMM >= 1000 && lengthMM < 2000) return { tol: 1.2, label: '±1.2' };
+        return null; // Outside standard range
+    }
+
     // ──────── CORE CALCULATION ────────
     function calculate() {
         const vals = validate();
@@ -202,11 +227,13 @@
             dom.baValue.textContent = '—';
             dom.bdValue.textContent = '—';
             dom.ossbValue.textContent = '—';
+            dom.tolValue.textContent = '—';
             dom.formulaSub.textContent = 'Fix the highlighted errors above.';
             return;
         }
 
         const { t, r, k, a } = vals;
+        const dp = currentPrecision;
 
         // Bend Allowance
         const ba = (Math.PI / 180) * a * (r + k * t);
@@ -219,9 +246,30 @@
         const bd = 2 * ossb - ba;
 
         // Update result values with animation
-        animateResult(dom.baValue, ba.toFixed(4));
-        animateResult(dom.bdValue, bd.toFixed(4));
-        animateResult(dom.ossbValue, ossb.toFixed(4));
+        animateResult(dom.baValue, ba.toFixed(dp));
+        animateResult(dom.bdValue, bd.toFixed(dp));
+        animateResult(dom.ossbValue, ossb.toFixed(dp));
+
+        // ISO 2768-m Tolerance (based on BA value in mm)
+        const baMM = currentUnit === 'in' ? ba * 25.4 : ba;
+        const isoTol = getISO2768Tolerance(baMM);
+        if (isoTol) {
+            animateResult(dom.tolValue, isoTol.label);
+            dom.tolUnit.textContent = currentUnit === 'in' ? `(${(isoTol.tol / 25.4).toFixed(4)} in)` : 'mm';
+        } else {
+            dom.tolValue.textContent = 'N/A';
+            dom.tolUnit.textContent = 'Outside range';
+        }
+
+        // Highlight active row in ISO reference table
+        const isoRows = $$('#isoTable tbody tr');
+        isoRows.forEach(row => {
+            row.classList.remove('active-iso-range');
+            const [lo, hi] = row.dataset.range.split('-').map(Number);
+            if (baMM >= lo && baMM < hi) {
+                row.classList.add('active-iso-range');
+            }
+        });
 
         // Formula substitution
         dom.fAngle.textContent = a;
@@ -230,8 +278,8 @@
         dom.fThickness.textContent = t;
         dom.formulaSub.innerHTML =
             `= (π/180) × ${a} × (${r} + ${k} × ${t})<br>` +
-            `= ${(Math.PI / 180).toFixed(6)} × ${a} × ${(r + k * t).toFixed(4)}<br>` +
-            `<strong>= ${ba.toFixed(4)} ${currentUnit}</strong>`;
+            `= ${(Math.PI / 180).toFixed(6)} × ${a} × ${(r + k * t).toFixed(dp)}<br>` +
+            `<strong>= ${ba.toFixed(dp)} ${currentUnit}</strong>`;
 
         // Update R/T ratio explainer
         updateRTExplainer(r, t);
@@ -287,14 +335,14 @@
     // ──────── SVG BEND DIAGRAM ────────
     function drawBendDiagram(R, T, angleDeg, K) {
         const svg = dom.bendDiagram;
-        const w = 400, h = 300;
+        const w = 600, h = 450;
 
-        // Normalize dimensions for display
-        const maxDim = Math.max(R + T, 50);
-        const scale = Math.min(80 / maxDim, 8);
+        // Normalize dimensions for display — balanced scale
+        const maxDim = Math.max(R + T, 5);
+        const scale = Math.min(150 / maxDim, 18);
 
-        const sR = Math.max(R * scale, 5);   // scaled inside radius
-        const sT = Math.max(T * scale, 3);   // scaled thickness
+        const sR = Math.max(R * scale, 15);   // scaled inside radius
+        const sT = Math.max(T * scale, 8);    // scaled thickness
         const sOR = sR + sT;                 // scaled outside radius
 
         const angleRad = (angleDeg * Math.PI) / 180;
@@ -302,10 +350,10 @@
 
         // Center point of the bend arc
         const cx = w / 2;
-        const cy = h / 2 + 20;
+        const cy = h / 2 + 40;
 
         // Leg length (the straight sections)
-        const legLen = 70;
+        const legLen = 160;
 
         // Start angle: the bend opens symmetrically upward
         const startAngle = Math.PI / 2 + halfAngle;
@@ -347,8 +395,8 @@
         // Background grid pattern
         svgContent += `
             <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(236,240,241,0.04)" stroke-width="0.5"/>
+                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
                 </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" rx="8"/>`;
@@ -365,9 +413,9 @@
                 A ${sR.toFixed(1)} ${sR.toFixed(1)} 0 ${largeArc} 0 ${iStart.x.toFixed(1)} ${iStart.y.toFixed(1)}
                 L ${iLeftLeg.x.toFixed(1)} ${iLeftLeg.y.toFixed(1)}
                 Z"
-                fill="rgba(44, 62, 80, 0.5)"
-                stroke="#ecf0f1"
-                stroke-width="1.5"
+                fill="rgba(26, 26, 26, 0.5)"
+                stroke="#ffffff"
+                stroke-width="2.5"
             />`;
 
         // Neutral axis (dashed)
@@ -380,9 +428,9 @@
                 A ${neutralR.toFixed(1)} ${neutralR.toFixed(1)} 0 ${largeArc} 1 ${nEnd.x.toFixed(1)} ${nEnd.y.toFixed(1)}
                 L ${nRightLeg.x.toFixed(1)} ${nRightLeg.y.toFixed(1)}"
                 fill="none"
-                stroke="#e74c3c"
-                stroke-width="1.5"
-                stroke-dasharray="6 4"
+                stroke="#FBAF03"
+                stroke-width="2.5"
+                stroke-dasharray="8 5"
                 opacity="0.9"
             />`;
 
@@ -391,13 +439,13 @@
         const rDimEnd = ptOnCircle(cx, cy, sR, midAngle);
         svgContent += `
             <line x1="${cx}" y1="${cy}" x2="${rDimEnd.x.toFixed(1)}" y2="${rDimEnd.y.toFixed(1)}"
-                  stroke="#e74c3c" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
-            <circle cx="${cx}" cy="${cy}" r="3" fill="#e74c3c" opacity="0.6"/>`;
+                  stroke="#FBAF03" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+            <circle cx="${cx}" cy="${cy}" r="4" fill="#FBAF03" opacity="0.6"/>`;
 
-        // Labels
+        // Labels — larger fonts
         svgContent += `
-            <text x="${cx}" y="${cy + 16}" text-anchor="middle"
-                  font-family="Inter, sans-serif" font-size="10" fill="#e74c3c" opacity="0.8">
+            <text x="${cx}" y="${cy + 22}" text-anchor="middle"
+                  font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#FBAF03" opacity="0.9">
                 R = ${R}
             </text>`;
 
@@ -405,34 +453,34 @@
         const tLabelAngle = startAngle;
         const tMid = ptOnCircle(cx, cy, sR + sT / 2, tLabelAngle);
         svgContent += `
-            <text x="${tMid.x - 30}" y="${tMid.y}" text-anchor="middle"
-                  font-family="Inter, sans-serif" font-size="10" fill="#ecf0f1" opacity="0.7">
+            <text x="${tMid.x - 40}" y="${tMid.y}" text-anchor="middle"
+                  font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#ffffff" opacity="0.8">
                 T = ${T}
             </text>`;
 
-        // Angle arc indicator
-        const angleArcR = 25;
+        // Angle arc indicator — larger
+        const angleArcR = 45;
         const angStart = ptOnCircle(cx, cy, angleArcR, startAngle);
         const angEnd = ptOnCircle(cx, cy, angleArcR, endAngle);
-        const angleLabel = ptOnCircle(cx, cy, angleArcR + 14, Math.PI / 2);
+        const angleLabel = ptOnCircle(cx, cy, angleArcR + 20, Math.PI / 2);
         svgContent += `
             <path d="M ${angStart.x.toFixed(1)} ${angStart.y.toFixed(1)}
                      A ${angleArcR} ${angleArcR} 0 ${largeArc} 1 ${angEnd.x.toFixed(1)} ${angEnd.y.toFixed(1)}"
-                  fill="none" stroke="#f39c12" stroke-width="1.5" opacity="0.7"/>
+                  fill="none" stroke="#f39c12" stroke-width="2" opacity="0.7"/>
             <text x="${angleLabel.x}" y="${angleLabel.y}" text-anchor="middle"
-                  font-family="Inter, sans-serif" font-size="10" fill="#f39c12" opacity="0.9">
+                  font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#f39c12" opacity="0.9">
                 ${angleDeg}°
             </text>`;
 
-        // Legend
+        // Legend — larger
         svgContent += `
-            <g transform="translate(10, 16)">
-                <line x1="0" y1="0" x2="16" y2="0" stroke="#ecf0f1" stroke-width="1.5"/>
-                <text x="20" y="4" font-family="Inter, sans-serif" font-size="9" fill="#95a5a6">Sheet Metal</text>
-                <line x1="0" y1="16" x2="16" y2="16" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4 3"/>
-                <text x="20" y="20" font-family="Inter, sans-serif" font-size="9" fill="#95a5a6">Neutral Axis</text>
-                <line x1="0" y1="32" x2="16" y2="32" stroke="#f39c12" stroke-width="1.5"/>
-                <text x="20" y="36" font-family="Inter, sans-serif" font-size="9" fill="#95a5a6">Bend Angle</text>
+            <g transform="translate(14, 20)">
+                <line x1="0" y1="0" x2="22" y2="0" stroke="#ffffff" stroke-width="2.5"/>
+                <text x="28" y="5" font-family="system-ui, sans-serif" font-size="13" fill="#b0b0b0">Sheet Metal</text>
+                <line x1="0" y1="22" x2="22" y2="22" stroke="#FBAF03" stroke-width="2.5" stroke-dasharray="6 4"/>
+                <text x="28" y="27" font-family="system-ui, sans-serif" font-size="13" fill="#b0b0b0">Neutral Axis</text>
+                <line x1="0" y1="44" x2="22" y2="44" stroke="#f39c12" stroke-width="2"/>
+                <text x="28" y="49" font-family="system-ui, sans-serif" font-size="13" fill="#b0b0b0">Bend Angle</text>
             </g>`;
 
         svg.innerHTML = svgContent;
@@ -502,27 +550,27 @@
         const printWin = window.open('', '_blank', 'width=700,height=900');
         printWin.document.write(`<!DOCTYPE html><html><head><title>Bend Allowance Report</title>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
             * { margin:0; padding:0; box-sizing:border-box; }
-            body { font-family:'Inter',sans-serif; padding:40px; color:#1a252f; }
-            .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #e74c3c; padding-bottom:16px; margin-bottom:32px; }
-            .header h1 { font-size:1.3rem; color:#2c3e50; }
-            .header .date { font-size:0.8rem; color:#7f8c8d; }
-            .brand { font-size:0.75rem; color:#95a5a6; }
+            body { font-family:system-ui,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; padding:40px; color:#1a1a1a; }
+            .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #FBAF03; padding-bottom:16px; margin-bottom:32px; }
+            .header h1 { font-size:1.3rem; color:#1a1a1a; }
+            .header .date { font-size:0.8rem; color:#888888; }
+            .brand { font-size:0.75rem; color:#b0b0b0; }
             table { width:100%; border-collapse:collapse; margin-bottom:24px; }
-            th, td { padding:10px 16px; text-align:left; border-bottom:1px solid #ecf0f1; }
-            th { background:#f8f9fa; font-size:0.8rem; color:#7f8c8d; text-transform:uppercase; letter-spacing:0.05em; }
+            th, td { padding:10px 16px; text-align:left; border-bottom:1px solid #e0e0e0; }
+            th { background:#f8f9fa; font-size:0.8rem; color:#888888; text-transform:uppercase; letter-spacing:0.05em; }
             td { font-family:'JetBrains Mono',monospace; font-size:0.95rem; }
-            .result-row td { font-weight:700; color:#2c3e50; }
-            .primary-result td { color:#e74c3c; font-size:1.1rem; }
+            .result-row td { font-weight:700; color:#1a1a1a; }
+            .primary-result td { color:#FBAF03; font-size:1.1rem; }
             .formula-section { background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:24px; }
-            .formula-section h3 { font-size:0.85rem; color:#7f8c8d; text-transform:uppercase; margin-bottom:8px; }
+            .formula-section h3 { font-size:0.85rem; color:#888888; text-transform:uppercase; margin-bottom:8px; }
             .formula-section code { font-family:'JetBrains Mono',monospace; font-size:0.95rem; }
-            .note { font-size:0.75rem; color:#95a5a6; border-top:1px solid #ecf0f1; padding-top:16px; margin-top:32px; }
+            .note { font-size:0.75rem; color:#b0b0b0; border-top:1px solid #e0e0e0; padding-top:16px; margin-top:32px; }
             @media print { body { padding:20px; } }
         </style></head><body>
             <div class="header">
-                <div><h1>⚙ Bend Allowance Calculation Report</h1><span class="brand">Tesla Mechanical Designs</span></div>
+                <div><h1>📐 Bend Allowance Calculation Report</h1><span class="brand">Tesla Mechanical Designs</span></div>
                 <div class="date">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
             </div>
 
@@ -550,7 +598,14 @@
                 <code>BA = (π / 180) × ${a} × (${r} + ${k} × ${t}) = ${ba.toFixed(4)} ${currentUnit}</code>
             </div>
 
-            <p class="note">This report was generated by the Sheet Metal Bend Allowance Calculator at teslamechanicaldesigns.com.<br>Calculations are for reference only. Always verify with your CAD system and material data sheets.</p>
+            <p class="note">This report was generated by the Sheet Metal Bend Allowance Calculator at teslamechanicaldesigns.com.<br>Calculations are for reference only. Always verify with your CAD system and material data sheets.<br>Calculations follow standard engineering principles compliant with ASME Y14.5 and ISO 2768-m.</p>
+
+            <h3 style="font-size:0.9rem;color:#888888;text-transform:uppercase;margin-bottom:12px;margin-top:32px;">Visual Bend Diagram</h3>
+            <div style="background:#1a1a1a;border-radius:8px;padding:20px;text-align:center;">
+                <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;height:auto;">
+                    ${dom.bendDiagram.innerHTML}
+                </svg>
+            </div>
         </body></html>`);
         printWin.document.close();
         setTimeout(() => printWin.print(), 400);

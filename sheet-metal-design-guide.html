@@ -8,19 +8,17 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2c3e50;
-            --primary-dark: #1a252f;
-            --accent: #e74c3c;
-            --text: #2c3e50;
-            --text-muted: #7f8c8d;
+            --primary: #1a1a1a;
+            --primary-dark: #111111;
+            --accent: #FBAF03;
+            --text: #1a1a1a;
+            --text-muted: #888888;
             --bg: #ffffff;
             --surface: #f8f9fa;
-            --border: #ecf0f1;
+            --border: #e0e0e0;
         }
 
         *,
@@ -32,7 +30,7 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: var(--text);
             line-height: 1.7;
             background: var(--bg);
@@ -142,7 +140,7 @@
         }
 
         .formula-card .label {
-            font-family: 'Inter', sans-serif;
+            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
             font-size: 0.75rem;
             color: var(--text-muted);
             text-transform: uppercase;
@@ -179,7 +177,7 @@
         }
 
         tr:hover td {
-            background: rgba(231, 76, 60, 0.03);
+            background: rgba(251, 175, 3, 0.03);
         }
 
         .tip-box {
@@ -254,8 +252,8 @@
         }
 
         .cta-section {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.08) 0%, var(--surface) 100%);
-            border: 1px solid rgba(231, 76, 60, 0.15);
+            background: linear-gradient(135deg, rgba(251, 175, 3, 0.08) 0%, var(--surface) 100%);
+            border: 1px solid rgba(251, 175, 3, 0.15);
             border-radius: 12px;
             padding: 32px;
             text-align: center;
@@ -271,7 +269,7 @@
             display: inline-block;
             padding: 12px 28px;
             background: var(--accent);
-            color: #fff;
+            color: #000;
             border-radius: 8px;
             font-weight: 600;
             text-decoration: none;
@@ -279,7 +277,7 @@
         }
 
         .cta-section a:hover {
-            background: #c0392b;
+            background: #e09d00;
         }
 
         @media print {
