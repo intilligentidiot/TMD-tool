@@ -85,7 +85,7 @@ def check_file_existence(link, current_file, root_dir):
     return os.path.exists(target_path) or os.path.exists(target_path.replace('%20', ' '))
 
 def main():
-    root_dir = r"c:\4D\4dbim"
+    root_dir = r"c:\Dharmik\AI sub-domain\TMD tool"
     html_files = []
     
     # Find all HTML files
