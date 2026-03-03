@@ -210,6 +210,8 @@
     // ──────── ISO 2768-m TOLERANCE ────────
     function getISO2768Tolerance(lengthMM) {
         // ISO 2768-m (medium) general tolerance ranges
+        if (lengthMM <= 0) return null;
+        if (lengthMM > 0 && lengthMM < 0.5) return { tol: 0.05, label: '±0.05' };
         if (lengthMM >= 0.5 && lengthMM < 3) return { tol: 0.1, label: '±0.1' };
         if (lengthMM >= 3 && lengthMM < 6) return { tol: 0.1, label: '±0.1' };
         if (lengthMM >= 6 && lengthMM < 30) return { tol: 0.2, label: '±0.2' };
@@ -217,7 +219,8 @@
         if (lengthMM >= 120 && lengthMM < 400) return { tol: 0.5, label: '±0.5' };
         if (lengthMM >= 400 && lengthMM < 1000) return { tol: 0.8, label: '±0.8' };
         if (lengthMM >= 1000 && lengthMM < 2000) return { tol: 1.2, label: '±1.2' };
-        return null; // Outside standard range
+        if (lengthMM >= 2000) return { tol: 2.0, label: '±2.0' };
+        return null;
     }
 
     // ──────── CORE CALCULATION ────────
@@ -337,7 +340,7 @@
         const svg = dom.bendDiagram;
         const w = 600, h = 450;
 
-        // Normalize dimensions for display — balanced scale
+        // Normalize dimensions for display — large scale
         const maxDim = Math.max(R + T, 5);
         const scale = Math.min(150 / maxDim, 18);
 
@@ -350,19 +353,20 @@
 
         // Center point of the bend arc
         const cx = w / 2;
-        const cy = h / 2 + 40;
+        const cy = h / 2 + 30; // Better center alignment
 
         // Leg length (the straight sections)
         const legLen = 160;
 
-        // Start angle: the bend opens symmetrically upward
-        const startAngle = Math.PI / 2 + halfAngle;
-        const endAngle = Math.PI / 2 - halfAngle;
+        // Start angle: the bend opens symmetrically upward (arc is at the bottom)
+        // We pivot around 3*PI/2 (270 degrees) so the center of the arc is down.
+        const startAngle = (3 * Math.PI / 2) - halfAngle;
+        const endAngle = (3 * Math.PI / 2) + halfAngle;
 
         // Helper: point on circle
         const ptOnCircle = (cx, cy, r, angle) => ({
             x: cx + r * Math.cos(angle),
-            y: cy - r * Math.sin(angle)
+            y: cy - r * Math.sin(angle) // Note: SVG y is inverted, so this assumes normal Cartesian +y is up
         });
 
         // Arc points
@@ -377,8 +381,12 @@
         const nEnd = ptOnCircle(cx, cy, neutralR, endAngle);
 
         // Leg directions (tangent to arc at endpoints)
-        const leftLegDir = { x: -Math.sin(startAngle), y: Math.cos(startAngle) };
-        const rightLegDir = { x: Math.sin(endAngle), y: -Math.cos(endAngle) };
+        // Derivatives of ptOnCircle: dx/dtheta = -r*sin(theta), dy/dtheta = -r*cos(theta)
+        // Since we want the legs to go OUTWARD from the arc ends:
+        // For startAngle (left side), theta is decreasing, so we take the NEGATIVE derivative
+        // For endAngle (right side), theta is increasing, so we take the POSITIVE derivative
+        const leftLegDir = { x: Math.sin(startAngle), y: Math.cos(startAngle) };
+        const rightLegDir = { x: -Math.sin(endAngle), y: -Math.cos(endAngle) };
 
         // Leg endpoints
         const iLeftLeg = { x: iStart.x + leftLegDir.x * legLen, y: iStart.y + leftLegDir.y * legLen };
@@ -444,7 +452,7 @@
 
         // Labels — larger fonts
         svgContent += `
-            <text x="${cx}" y="${cy + 22}" text-anchor="middle"
+            <text x="${cx}" y="${cy + Math.max(sR / 2, 20)}" text-anchor="middle"
                   font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#FBAF03" opacity="0.9">
                 R = ${R}
             </text>`;
@@ -453,28 +461,30 @@
         const tLabelAngle = startAngle;
         const tMid = ptOnCircle(cx, cy, sR + sT / 2, tLabelAngle);
         svgContent += `
-            <text x="${tMid.x - 40}" y="${tMid.y}" text-anchor="middle"
+            <text x="${tMid.x - 30}" y="${tMid.y + 10}" text-anchor="middle"
                   font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#ffffff" opacity="0.8">
                 T = ${T}
             </text>`;
 
-        // Angle arc indicator — larger
-        const angleArcR = 45;
+        // Angle arc indicator
+        // Since diagram is inverted (pivoting around 270 deg / 3*PI/2), the angle arc is drawn at the top or bottom
+        // We'll draw it tracking the outer radius
+        const angleArcR = sOR + 25;
         const angStart = ptOnCircle(cx, cy, angleArcR, startAngle);
         const angEnd = ptOnCircle(cx, cy, angleArcR, endAngle);
-        const angleLabel = ptOnCircle(cx, cy, angleArcR + 20, Math.PI / 2);
+        const angleLabel = ptOnCircle(cx, cy, angleArcR + 20, 3 * Math.PI / 2);
         svgContent += `
             <path d="M ${angStart.x.toFixed(1)} ${angStart.y.toFixed(1)}
                      A ${angleArcR} ${angleArcR} 0 ${largeArc} 1 ${angEnd.x.toFixed(1)} ${angEnd.y.toFixed(1)}"
-                  fill="none" stroke="#f39c12" stroke-width="2" opacity="0.7"/>
+                  fill="none" stroke="#f39c12" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"/>
             <text x="${angleLabel.x}" y="${angleLabel.y}" text-anchor="middle"
                   font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#f39c12" opacity="0.9">
                 ${angleDeg}°
             </text>`;
 
-        // Legend — larger
+        // Legend — moved to bottom left to prevent overlap with the large diagram
         svgContent += `
-            <g transform="translate(14, 20)">
+            <g transform="translate(20, 370)">
                 <line x1="0" y1="0" x2="22" y2="0" stroke="#ffffff" stroke-width="2.5"/>
                 <text x="28" y="5" font-family="system-ui, sans-serif" font-size="13" fill="#b0b0b0">Sheet Metal</text>
                 <line x1="0" y1="22" x2="22" y2="22" stroke="#FBAF03" stroke-width="2.5" stroke-dasharray="6 4"/>

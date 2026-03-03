@@ -210,6 +210,17 @@
                         <span class="error-msg" id="angle-error"></span>
                     </div>
                 </form>
+
+                <!-- SVG Diagram -->
+                <div class="diagram-box" style="margin-top: 24px;">
+                    <h3>Visual Bend Diagram</h3>
+                    <div class="svg-container" id="svgContainer">
+                        <svg id="bendDiagram" viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"
+                            aria-label="Dynamic bend cross-section diagram">
+                            <!-- Populated by JS -->
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             <!-- ---- RESULTS PANEL ---- -->
@@ -266,6 +277,11 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <tr data-range="0-0.5">
+                                    <td>
+                                        < 0.5</td>
+                                    <td>± 0.05</td>
+                                </tr>
                                 <tr data-range="0.5-3">
                                     <td>0.5 – 3</td>
                                     <td>± 0.1</td>
@@ -294,6 +310,10 @@
                                     <td>1000 – 2000</td>
                                     <td>± 1.2</td>
                                 </tr>
+                                <tr data-range="2000-999999">
+                                    <td>≥ 2000</td>
+                                    <td>± 2.0</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -312,16 +332,6 @@
                     </div>
                 </div>
 
-                <!-- SVG Diagram -->
-                <div class="diagram-box">
-                    <h3>Visual Bend Diagram</h3>
-                    <div class="svg-container" id="svgContainer">
-                        <svg id="bendDiagram" viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"
-                            aria-label="Dynamic bend cross-section diagram">
-                            <!-- Populated by JS -->
-                        </svg>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
