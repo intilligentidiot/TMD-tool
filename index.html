@@ -406,6 +406,62 @@
         </div>
     </section>
 
+    <!-- ========== PRINT REPORT MODAL ========== -->
+    <div class="modal-overlay" id="printModal" role="dialog" aria-modal="true" aria-labelledby="printModalTitle" hidden>
+        <div class="modal print-modal">
+            <button class="modal-close" id="printModalClose" aria-label="Close modal">&times;</button>
+            <h3 id="printModalTitle">Download CNC Design Verification Report</h3>
+
+            <form id="printForm" novalidate class="print-lead-form">
+                <div class="form-grid">
+                    <div class="form-group icon-input">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="printName" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group icon-input">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="printEmail" placeholder="E-mail" required>
+                    </div>
+                    <div class="form-group icon-input">
+                        <span class="input-icon">📞</span>
+                        <input type="tel" id="printPhone" placeholder="Phone No" required>
+                    </div>
+                    <div class="form-group icon-input select-wrapper">
+                        <span class="input-icon">🌎</span>
+                        <select id="printCountry" required>
+                            <option value="" disabled selected hidden>Select Country</option>
+                            <option value="US">United States</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="IN">India</option>
+                            <option value="OT">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group icon-input full-width">
+                    <span class="input-icon message-icon">💬</span>
+                    <textarea id="printMessage" placeholder="Message" rows="3" required></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="cta-button print-modal-submit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg>
+                        <span>SUBMIT</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="modal-success" id="printModalSuccess" hidden>
+                <span class="success-icon">✅</span>
+                <p>Generating your report...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== EMAIL MODAL ========== -->
     <div class="modal-overlay" id="emailModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
         <div class="modal">
@@ -437,7 +493,103 @@
                 and ISO 2768-m.</p>
         </div>
     </footer>
+    <!-- ========== HIDDEN PDF TEMPLATE ========== -->
+    <div id="pdf-container" style="display: none; position: absolute; left: -9999px;">
+        <div id="pdf-template"
+            style="width: 800px; padding: 40px 50px; background: #ffffff; color: #1a1a1a; font-family: 'Segoe UI', Roboto, sans-serif;">
 
+            <!-- Header -->
+            <div
+                style="border-bottom: 3px solid #FBAF03; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h1
+                        style="color: #1a1a1a; font-size: 24px; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FBAF03" stroke-width="3"
+                            stroke-linejoin="round" stroke-linecap="round">
+                            <path d="M12 2L2 22h20L12 2z" />
+                            <path d="M12 22L12 12" stroke="#1a1a1a" />
+                        </svg>
+                        Bend Allowance Calculation Report
+                    </h1>
+                    <span style="color: #888888; font-size: 14px;">Tesla Mechanical Designs</span>
+                </div>
+                <div id="pdf-date" style="color: #888888; font-size: 14px;"></div>
+            </div>
+
+            <!-- Input Parameters -->
+            <h3
+                style="color: #7f8c8d; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; font-weight: 600;">
+                INPUT PARAMETERS</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            PARAMETER</th>
+                        <th
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            VALUE</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-inputs" style="font-family: 'JetBrains Mono', monospace; font-size: 14px;">
+                    <!-- Injected via JS -->
+                </tbody>
+            </table>
+
+            <!-- Results -->
+            <h3
+                style="color: #7f8c8d; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; font-weight: 600;">
+                RESULTS</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            OUTPUT</th>
+                        <th
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            VALUE</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-results" style="font-family: 'JetBrains Mono', monospace; font-size: 14px;">
+                    <!-- Injected via JS -->
+                </tbody>
+            </table>
+
+            <!-- Formula -->
+            <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin-bottom: 40px;">
+                <h3 style="color: #7f8c8d; font-size: 13px; text-transform: uppercase; margin: 0 0 12px 0;">FORMULA USED
+                </h3>
+                <code id="pdf-formula"
+                    style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #1a1a1a; display: block;">
+                    <!-- Injected via JS -->
+                </code>
+            </div>
+
+            <!-- Footer Note -->
+            <p
+                style="color: #b0b0b0; font-size: 11px; line-height: 1.5; border-top: 1px solid #e0e0e0; padding-top: 20px; page-break-inside: avoid;">
+                This report was generated by the Sheet Metal Bend Allowance Calculator at
+                teslamechanicaldesigns.com.<br>
+                Calculations are for reference only. Always verify with your CAD system and material data sheets.<br>
+                Calculations follow standard engineering principles compliant with ASME Y14.5 and ISO 2768-m.
+            </p>
+
+            <!-- Visual Diagram -->
+            <div style="margin-top: 40px; page-break-inside: avoid;">
+                <h3 style="color: #7f8c8d; font-size: 12px; text-transform: uppercase; margin-bottom: 16px;">VISUAL BEND
+                    DIAGRAM</h3>
+                <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; text-align: center;">
+                    <svg id="pdf-svg" viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg"
+                        style="width: 100%; max-width: 400px; height: auto;">
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 

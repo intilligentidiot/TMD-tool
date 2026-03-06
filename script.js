@@ -55,6 +55,11 @@
 
         printBtn: $('#printBtn'),
 
+        printModal: $('#printModal'),
+        printModalClose: $('#printModalClose'),
+        printForm: $('#printForm'),
+        printModalSuccess: $('#printModalSuccess'),
+
         ctaButton: $('#ctaButton'),
         emailModal: $('#emailModal'),
         modalClose: $('#modalClose'),
@@ -505,17 +510,46 @@
         });
     });
 
+    dom.printBtn.addEventListener('click', () => {
+        const vals = validate();
+        if (!vals) {
+            alert('Please fix the input errors before proceeding.');
+            return;
+        }
+        dom.printModal.hidden = false;
+        dom.printModal.removeAttribute('hidden');
+        requestAnimationFrame(() => {
+            dom.printModal.classList.add('visible');
+        });
+    });
+
     function closeModal() {
         dom.emailModal.classList.remove('visible');
+        dom.printModal.classList.remove('visible');
         setTimeout(() => {
             dom.emailModal.hidden = true;
             dom.emailModal.setAttribute('hidden', '');
+            dom.printModal.hidden = true;
+            dom.printModal.setAttribute('hidden', '');
+
+            // Reset forms state
+            dom.leadForm.reset();
+            dom.leadForm.hidden = false;
+            dom.modalSuccess.hidden = true;
+
+            dom.printForm.reset();
+            dom.printForm.hidden = false;
+            dom.printModalSuccess.hidden = true;
         }, 300);
     }
 
     dom.modalClose.addEventListener('click', closeModal);
-    dom.emailModal.addEventListener('click', (e) => {
-        if (e.target === dom.emailModal) closeModal();
+    dom.printModalClose.addEventListener('click', closeModal);
+
+    [dom.emailModal, dom.printModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
     });
 
     dom.leadForm.addEventListener('submit', (e) => {
@@ -535,91 +569,148 @@
         }
     });
 
+    dom.printForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const vals = validate();
+        if (!vals) {
+            alert('Please fix calculator input errors before submitting.');
+            return;
+        }
+
+        const name = $('#printName').value.trim();
+        const email = $('#printEmail').value.trim();
+        const phone = $('#printPhone').value.trim();
+        const country = $('#printCountry').value.trim();
+        const message = $('#printMessage').value.trim();
+
+        if (!name || !email || !phone || !country || !message) {
+            alert('Please fill all required fields');
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Please use a valid email ID');
+            return;
+        }
+
+        // Show loading state
+        dom.printForm.hidden = true;
+        dom.printModalSuccess.hidden = false;
+        dom.printModalSuccess.removeAttribute('hidden');
+        dom.printModalSuccess.querySelector('p').textContent = "Generating PDF and sending...";
+
+        try {
+            // 1. Generate PDF on the fly
+            const pdfBlob = await getBendReportPDFBlob(vals);
+
+            // 2. Prepare Form Data
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('country', country);
+            formData.append('message', message);
+            formData.append('pdf_file', pdfBlob, 'Tesla_Mechanical_CNC_Report.pdf');
+
+            // 3. Submit to server
+            // Note: This URL must point to your WordPress install where the PHP file lives.
+            const response = await fetch('/bend-allowance-form-submission.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultText = await response.text();
+
+            if (resultText.trim() === 'SUCCESS') {
+                dom.printModalSuccess.querySelector('p').textContent = "Success! Redirecting...";
+                setTimeout(() => {
+                    closeModal();
+                    window.location.href = "https://www.teslamechanicaldesigns.com/thank-you.php";
+                }, 1000);
+            } else {
+                alert('Server Error: ' + resultText);
+                dom.printForm.hidden = false;
+                dom.printModalSuccess.hidden = true;
+            }
+        } catch (error) {
+            console.error("Submission Error:", error);
+            alert('Something went wrong. Please try again.');
+            dom.printForm.hidden = false;
+            dom.printModalSuccess.hidden = true;
+        }
+    });
+
     // Escape key closes modal
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && dom.emailModal.classList.contains('visible')) {
+        if (e.key === 'Escape') {
             closeModal();
         }
     });
 
-    // ──────── PRINT / EXPORT ────────
-    dom.printBtn.addEventListener('click', () => {
-        const vals = validate();
-        if (!vals) {
-            alert('Please fix the input errors before printing.');
-            return;
-        }
-        const { t, r, k, a } = vals;
-        const ba = (Math.PI / 180) * a * (r + k * t);
-        const halfAngleRad = (a / 2) * (Math.PI / 180);
-        const ossb = (r + t) * Math.tan(halfAngleRad);
-        const bd = 2 * ossb - ba;
-        const matName = MATERIALS[dom.material.value]?.name || 'Custom';
-        const ratio = t > 0 ? (r / t).toFixed(2) : 'N/A';
+    // ──────── PDF GENERATION ────────
+    async function getBendReportPDFBlob(vals) {
+        return new Promise((resolve, reject) => {
+            const { t, r, k, a } = vals;
+            const ba = (Math.PI / 180) * a * (r + k * t);
+            const halfAngleRad = (a / 2) * (Math.PI / 180);
+            const ossb = (r + t) * Math.tan(halfAngleRad);
+            const bd = 2 * ossb - ba;
+            const matName = MATERIALS[dom.material.value]?.name || 'Custom';
+            const ratio = t > 0 ? (r / t).toFixed(2) : 'N/A';
 
-        const printWin = window.open('', '_blank', 'width=700,height=900');
-        printWin.document.write(`<!DOCTYPE html><html><head><title>Bend Allowance Report</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
-            * { margin:0; padding:0; box-sizing:border-box; }
-            body { font-family:system-ui,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; padding:40px; color:#1a1a1a; }
-            .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #FBAF03; padding-bottom:16px; margin-bottom:32px; }
-            .header h1 { font-size:1.3rem; color:#1a1a1a; }
-            .header .date { font-size:0.8rem; color:#888888; }
-            .brand { font-size:0.75rem; color:#b0b0b0; }
-            table { width:100%; border-collapse:collapse; margin-bottom:24px; }
-            th, td { padding:10px 16px; text-align:left; border-bottom:1px solid #e0e0e0; }
-            th { background:#f8f9fa; font-size:0.8rem; color:#888888; text-transform:uppercase; letter-spacing:0.05em; }
-            td { font-family:'JetBrains Mono',monospace; font-size:0.95rem; }
-            .result-row td { font-weight:700; color:#1a1a1a; }
-            .primary-result td { color:#FBAF03; font-size:1.1rem; }
-            .formula-section { background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:24px; }
-            .formula-section h3 { font-size:0.85rem; color:#888888; text-transform:uppercase; margin-bottom:8px; }
-            .formula-section code { font-family:'JetBrains Mono',monospace; font-size:0.95rem; }
-            .note { font-size:0.75rem; color:#b0b0b0; border-top:1px solid #e0e0e0; padding-top:16px; margin-top:32px; }
-            @media print { body { padding:20px; } }
-        </style></head><body>
-            <div class="header">
-                <div><h1>📐 Bend Allowance Calculation Report</h1><span class="brand">Tesla Mechanical Designs</span></div>
-                <div class="date">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-            </div>
+            // Populate the template
+            document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            <h3 style="font-size:0.9rem;color:#7f8c8d;text-transform:uppercase;margin-bottom:12px;">Input Parameters</h3>
-            <table>
-                <tr><th>Parameter</th><th>Value</th></tr>
-                <tr><td>Material</td><td>${matName}</td></tr>
-                <tr><td>Thickness (T)</td><td>${t} ${currentUnit}</td></tr>
-                <tr><td>Inside Bend Radius (R)</td><td>${r} ${currentUnit}</td></tr>
-                <tr><td>K-Factor (K)</td><td>${k}</td></tr>
-                <tr><td>Bend Angle (A)</td><td>${a}°</td></tr>
-                <tr><td>R/T Ratio</td><td>${ratio}</td></tr>
-            </table>
+            document.getElementById('pdf-inputs').innerHTML = `
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Material</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${matName}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Thickness (T)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${t} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Inside Bend Radius (R)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${r} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">K-Factor (K)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${k}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Bend Angle (A)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${a}°</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">R/T Ratio</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${ratio}</td></tr>
+            `;
 
-            <h3 style="font-size:0.9rem;color:#7f8c8d;text-transform:uppercase;margin-bottom:12px;">Results</h3>
-            <table>
-                <tr><th>Output</th><th>Value</th></tr>
-                <tr class="result-row primary-result"><td>Bend Allowance (BA)</td><td>${ba.toFixed(4)} ${currentUnit}</td></tr>
-                <tr class="result-row"><td>Bend Deduction (BD)</td><td>${bd.toFixed(4)} ${currentUnit}</td></tr>
-                <tr class="result-row"><td>Outside Setback (OSSB)</td><td>${ossb.toFixed(4)} ${currentUnit}</td></tr>
-            </table>
+            document.getElementById('pdf-results').innerHTML = `
+                <tr><td style="padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #FBAF03;">Bend Allowance (BA)</td><td style="padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #FBAF03; font-size: 16px;">${ba.toFixed(4)} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">Bend Deduction (BD)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${bd.toFixed(4)} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">Outside Setback (OSSB)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${ossb.toFixed(4)} ${currentUnit}</td></tr>
+            `;
 
-            <div class="formula-section">
-                <h3>Formula Used</h3>
-                <code>BA = (π / 180) × ${a} × (${r} + ${k} × ${t}) = ${ba.toFixed(4)} ${currentUnit}</code>
-            </div>
+            document.getElementById('pdf-formula').innerHTML = `BA = (π / 180) × ${a} × (${r} + ${k} × ${t}) = ${ba.toFixed(4)} ${currentUnit}`;
 
-            <p class="note">This report was generated by the Sheet Metal Bend Allowance Calculator at teslamechanicaldesigns.com.<br>Calculations are for reference only. Always verify with your CAD system and material data sheets.<br>Calculations follow standard engineering principles compliant with ASME Y14.5 and ISO 2768-m.</p>
+            // Clone SVG
+            document.getElementById('pdf-svg').innerHTML = dom.bendDiagram.innerHTML;
 
-            <h3 style="font-size:0.9rem;color:#888888;text-transform:uppercase;margin-bottom:12px;margin-top:32px;">Visual Bend Diagram</h3>
-            <div style="background:#1a1a1a;border-radius:8px;padding:20px;text-align:center;">
-                <svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;height:auto;">
-                    ${dom.bendDiagram.innerHTML}
-                </svg>
-            </div>
-        </body></html>`);
-        printWin.document.close();
-        setTimeout(() => printWin.print(), 400);
-    });
+            const container = document.getElementById('pdf-container');
+            const element = document.getElementById('pdf-template');
+
+            // html2pdf cannot render elements with display: none
+            // Temporarily show it (it's positioned off-screen left: -9999px via inline styles already)
+            container.style.display = 'block';
+
+            // html2pdf options for high quality
+            const opt = {
+                margin: 0, // using internal padding
+                filename: 'Tesla_Mechanical_CNC_Report.pdf',
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Generate blob
+            html2pdf().set(opt).from(element).output('blob').then((blob) => {
+                container.style.display = 'none'; // Hide again immediately
+                resolve(blob);
+            }).catch(err => {
+                container.style.display = 'none'; // Hide even if it fails
+                console.error("PDF Generation failed:", err);
+                reject(err);
+            });
+        });
+    }
 
     // ──────── PAGE-LOAD ANIMATIONS ────────
     const animateObserver = new IntersectionObserver((entries) => {
