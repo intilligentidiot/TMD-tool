@@ -687,8 +687,19 @@
             pdfSvg.setAttribute('width', '600');
             pdfSvg.setAttribute('height', '450');
 
-            // Grab the raw HTML string of the template
-            const htmlString = document.getElementById('pdf-template').outerHTML;
+            // Revert to element capture to prevent html2pdf from hanging
+            const container = document.getElementById('pdf-container');
+            const element = document.getElementById('pdf-template');
+
+            // Force exactly 0,0 position with opacity 0 to prevent scroll clipping bugs
+            // without making it visible to the user and without using negative left values
+            container.style.position = 'absolute';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.opacity = '0';
+            container.style.zIndex = '-9999';
+            container.style.pointerEvents = 'none';
+            container.style.display = 'block';
 
             // html2pdf options for high quality
             const opt = {
@@ -708,12 +719,12 @@
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            // Generate blob from the HTML string
-            // This forces html2pdf to build it in an isolated off-screen <iframe>
-            // bypassing all offset/scroll clipping bugs.
-            html2pdf().set(opt).from(htmlString).output('blob').then((blob) => {
+            // Generate blob from the DOM element directly
+            html2pdf().set(opt).from(element).output('blob').then((blob) => {
+                container.style.display = 'none';
                 resolve(blob);
             }).catch(err => {
+                container.style.display = 'none';
                 console.error("PDF Generation failed:", err);
                 reject(err);
             });
