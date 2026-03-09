@@ -617,7 +617,7 @@
 
             // 3. Submit to server
             // Note: This URL must point to your WordPress install where the PHP file lives.
-            const response = await fetch('/bend-allowance-form-submission.php', {
+            const response = await fetch('https://www.teslamechanicaldesigns.com/checklist-form-submition.php', {
                 method: 'POST',
                 body: formData
             });
@@ -665,47 +665,55 @@
             document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
             document.getElementById('pdf-inputs').innerHTML = `
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Material</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${matName}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Thickness (T)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${t} ${currentUnit}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Inside Bend Radius (R)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${r} ${currentUnit}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">K-Factor (K)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${k}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">Bend Angle (A)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${a}°</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">R/T Ratio</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">${ratio}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">Material</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${matName}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">Thickness (T)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${t} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">Inside Bend Radius (R)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${r} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">K-Factor (K)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${k}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">Bend Angle (A)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${a}°</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">R/T Ratio</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc;">${ratio}</td></tr>
             `;
 
             document.getElementById('pdf-results').innerHTML = `
-                <tr><td style="padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #FBAF03;">Bend Allowance (BA)</td><td style="padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #FBAF03; font-size: 16px;">${ba.toFixed(4)} ${currentUnit}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">Bend Deduction (BD)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${bd.toFixed(4)} ${currentUnit}</td></tr>
-                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">Outside Setback (OSSB)</td><td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${ossb.toFixed(4)} ${currentUnit}</td></tr>
+                <tr><td style="padding: 14px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 700; color: #FBAF03;">Bend Allowance (BA)</td><td style="padding: 14px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 700; color: #FBAF03; font-size: 16px;">${ba.toFixed(4)} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 600;">Bend Deduction (BD)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 600;">${bd.toFixed(4)} ${currentUnit}</td></tr>
+                <tr><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 600;">Outside Setback (OSSB)</td><td style="padding: 12px 16px; border-bottom: 1px solid #dcdcdc; font-weight: 600;">${ossb.toFixed(4)} ${currentUnit}</td></tr>
             `;
 
             document.getElementById('pdf-formula').innerHTML = `BA = (π / 180) × ${a} × (${r} + ${k} × ${t}) = ${ba.toFixed(4)} ${currentUnit}`;
 
-            // Clone SVG
-            document.getElementById('pdf-svg').innerHTML = dom.bendDiagram.innerHTML;
+            // Clone SVG and set explicit dimensions for html2canvas
+            const pdfSvg = document.getElementById('pdf-svg');
+            pdfSvg.innerHTML = dom.bendDiagram.innerHTML;
+            pdfSvg.setAttribute('width', '600');
+            pdfSvg.setAttribute('height', '450');
 
-            const container = document.getElementById('pdf-container');
-            const element = document.getElementById('pdf-template');
-
-            // html2pdf cannot render elements with display: none
-            // Temporarily show it (it's positioned off-screen left: -9999px via inline styles already)
-            container.style.display = 'block';
+            // Grab the raw HTML string of the template
+            const htmlString = document.getElementById('pdf-template').outerHTML;
 
             // html2pdf options for high quality
             const opt = {
-                margin: 0, // using internal padding
+                margin: 0,
                 filename: 'Tesla_Mechanical_CNC_Report.pdf',
                 image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    windowWidth: 800,
+                    x: 0,
+                    y: 0,
+                    scrollX: 0,
+                    scrollY: 0
+                },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            // Generate blob
-            html2pdf().set(opt).from(element).output('blob').then((blob) => {
-                container.style.display = 'none'; // Hide again immediately
+            // Generate blob from the HTML string
+            // This forces html2pdf to build it in an isolated off-screen <iframe>
+            // bypassing all offset/scroll clipping bugs.
+            html2pdf().set(opt).from(htmlString).output('blob').then((blob) => {
                 resolve(blob);
             }).catch(err => {
-                container.style.display = 'none'; // Hide even if it fails
                 console.error("PDF Generation failed:", err);
                 reject(err);
             });

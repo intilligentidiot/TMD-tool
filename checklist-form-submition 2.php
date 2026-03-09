@@ -1,14 +1,13 @@
 <?php
 /**
- * Bend Allowance Report Form Submission
+ * CNC Checklist Form Submission
  * 
- * This script processes form data, receives a generated PDF report blob,
+ * This script processes form data, generates a temporary PDF report,
  * and sends it as an email attachment using WordPress wp_mail().
  */
 
 // (1) WordPress Integration
-// Adjust this path if the tool is not directly one level below the WordPress root.
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+require_once($_SERVER['DOCUMENT_ROOT'] . '/blog/wp-load.php');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -48,7 +47,7 @@ if (!is_email($sanitized_email)) {
 
 // (3) PDF Handling (Received from Frontend)
 $temp_dir = sys_get_temp_dir();
-$filename = 'tmd_bend_report_' . time() . '_' . uniqid() . '.pdf';
+$filename = 'cnc_checklist_' . time() . '_' . uniqid() . '.pdf';
 $file_path = $temp_dir . DIRECTORY_SEPARATOR . $filename;
 
 // Check if a PDF file was uploaded from the frontend
@@ -71,17 +70,15 @@ if (!file_exists($file_path)) {
     exit;
 }
 
+
 // (4) Email Sending with Attachment
 $to = $sanitized_email;
-$admin_to = "info@teslamechanicaldesigns.com"; // Admin notification
-$subject = "Your CNC Bend Allowance Report - Tesla Mechanical Designs";
+$admin_to = "tos.webdevuser02@gmail.com"; // Admin notification
+$subject = "Your CNC Design Verification Report - Tesla Mechanical Designs";
 
 // Email Body
 $email_body = "Hi $name,\n\n";
-$email_body .= "Thank you for using the TMD Sheet Metal Bend Allowance Calculator.\n\n";
-$email_body .= "Please find your generated calculated report attached to this email as a PDF.\n\n";
-$email_body .= "Based on your message:\n\"$message\"\n\n";
-$email_body .= "One of our engineers may reach out to you shortly.\n\n";
+$email_body .= "Thank you for using our CNC Design Verification Tool. Please find your generated checklist report attached to this email.\n\n";
 $email_body .= "Best Regards,\nTesla Mechanical Designs Team";
 
 // Headers
@@ -103,15 +100,15 @@ if (file_exists($file_path)) {
 // (6) Response/Error Handling
 if ($mail_sent) {
     // Notify admin with full details
-    $admin_subject = "New Bend Report lead: $name";
-    $admin_body = "A user has generated a Bend Allowance Report and submitted a lead.\n\n";
+    $admin_subject = "New CNC Report Sent: $name";
+    $admin_body = "A new CNC Design Verification report has been sent.\n\n";
     $admin_body .= "User Details:\n";
     $admin_body .= "Name: $name\n";
     $admin_body .= "Email: $sanitized_email\n";
     $admin_body .= "Phone: $phone\n";
     $admin_body .= "Country: $country\n";
     $admin_body .= "Message: $message\n\n";
-    $admin_body .= "Source: Sheet Metal Bend Allowance Calculator";
+    $admin_body .= "Source: CNC Checklist Tool";
 
     wp_mail($admin_to, $admin_subject, $admin_body, $headers);
 

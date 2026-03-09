@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -12,7 +12,7 @@
     <meta name="author" content="Tesla Mechanical Designs">
 
     <!-- Robots -->
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="noindex,nofollow">
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
@@ -50,7 +50,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sheet-metal-bend-allowance-calculator.css">
 
     <!-- JSON-LD Schema -->
     <script type="application/ld+json">
@@ -494,7 +494,7 @@
         </div>
     </footer>
     <!-- ========== HIDDEN PDF TEMPLATE ========== -->
-    <div id="pdf-container" style="display: none; position: absolute; left: -9999px;">
+    <div id="pdf-container" style="display: none;">
         <div id="pdf-template"
             style="width: 800px; padding: 40px 50px; background: #ffffff; color: #1a1a1a; font-family: 'Segoe UI', Roboto, sans-serif;">
 
@@ -524,10 +524,10 @@
                 <thead>
                     <tr style="background: #f8f9fa;">
                         <th
-                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #dddddd;">
                             PARAMETER</th>
                         <th
-                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #dddddd;">
                             VALUE</th>
                     </tr>
                 </thead>
@@ -544,10 +544,10 @@
                 <thead>
                     <tr style="background: #f8f9fa;">
                         <th
-                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #dddddd;">
                             OUTPUT</th>
                         <th
-                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0;">
+                            style="padding: 12px 16px; text-align: left; font-size: 12px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #dddddd;">
                             VALUE</th>
                     </tr>
                 </thead>
@@ -590,7 +590,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="script.js"></script>
+    <script src="sheet-metal-bend-allowance-calculator.js"></script>
 </body>
 
 </html>
